@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    stages {
+        stage ('Checkout') {
+            steps {
+                git 'repo-url'
+            }
+        }
+        stage ('Compile & Package') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ('SonarQube Analysis') {
+            steps {
+                sonarqube 'sonar-url'
+            }
+        }
+        stage ('Build Docker Image') {
+            steps {
+                docker.build 'image-name'
+            }
+        }
+        stage ('Push Docker Image to Registry') {
+            steps {
+                docker.withRegistry('registry-url', 'credentials-id') {
+                    docker.image('image-name').push('latest')
+                }
+            }
+        }
+        stage ('Deploy to Kubernetes') {
+            steps {
+                kubernetes.withCluster('cluster-name', 'credentials-id') {
+                    sh 'kubectl apply -f deployment.yml'
+                }
+            }
+       
